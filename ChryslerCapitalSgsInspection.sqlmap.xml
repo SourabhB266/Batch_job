@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?><!--Converted at: Thu Oct 03 11:06:43 EDT 2013-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ChryslerCapitalSgsInspection">
+	
+	<select id="getAllChryslerCapitalLoadedVins" parameterType="com.atc.dataservices.mapper.model.AtcoStageVehicle" resultType="com.atc.dataservices.mapper.model.AtcoStageVehicle">
+	   SELECT ASV.VIN as vin, 
+	          V.SYSTEM_ID as systemId,
+	          V.VEHICLE_STATUS_ID as vehicleStatusId,
+	          V.CAR_GROUP_CONFIG_ID as carGroupConfigId,
+	          V.VEHICLE_ID as vehicleId,
+	           #{sellerOrganizationId} as sellerOrganizationId,
+	          V.MILEAGE as mileage,
+	          V.YEAR as year,
+	          V.MAKE_NAME as makeName,
+	          V.LAST_UPDATE_STATUS_DATE as lastUpdateStatusDate,
+	          V.LOCATION_ID as locationId,
+	          ASV.MAKE_NAME as stagingMakeName,
+	          ASV.INSPECTION_ORG_ID as inspectionOrgId,
+	          ASV.DB_PROCESS_ID as dbProcessId,
+	          ASV.LOADED as loaded,
+	          ASV.EXCP_TYPE_REASON as excpTypeReason,
+	          ASV.TRANSMISSION as transmission,
+	          I.INSPECTION_ID as previousInspectionId,
+	          (SELECT VS.NAME FROM VEHICLE_STATUSES VS
+				WHERE VS.SYSTEM_ID = V.SYSTEM_ID AND VS.VEHICLE_STATUS_ID = V.VEHICLE_STATUS_ID )
+				 as vehicleStatusName,
+			  'MM/dd/yyyy' as reportDateFormat,
+                  (SELECT L.NAME FROM LOCATIONS L
+				WHERE L.LOCATION_ID = V.LOCATION_ID) as vehicleLocationName,
+			  ASI.INSPECTION_MILEAGE as inspectionMileage,
+			  ASI.INSPECTION_DATE as inspectionDate
+	     FROM ATCO_STAGE_VEHICLES ASV
+	     LEFT OUTER JOIN VEHICLES V ON ASV.VIN = V.VIN 
+	                               AND V.ACTIVE = 1 
+	                               AND V.SELLER_ORGANIZATION_ID = #{sellerOrganizationId} 
+	                               AND v.CAR_GROUP_CONFIG_ID in (1132,1123,1516)
+	     LEFT OUTER JOIN INSPECTIONS I ON V.VEHICLE_ID = I.VEHICLE_ID
+	                                  AND I.ACTIVE = 1
+	     LEFT OUTER JOIN ATCO_STAGE_INSPECTIONS ASI ON ASI.VIN = ASV.VIN
+                                      AND ASI.DB_PROCESS_ID = #{dbProcessId}
+	    WHERE ASV.DB_PROCESS_ID = #{dbProcessId}
+	    AND ASV.LOADED = 1
+	</select>
+	
+	<select id="getCcapDealerInspected" parameterType="com.atc.dataservices.mapper.model.AtcoStageVehicle" resultType="java.lang.Long">
+		
+		SELECT 1 
+           FROM VEHICLES V,INSPECTIONS I
+           
+            WHERE V.VEHICLE_ID = #{vehicleId}
+            AND V.ACTIVE=1 AND NVL(I.ACTIVE,0)=1
+            AND V.VEHICLE_ID=I.VEHICLE_ID(+)
+            AND NVL(I.INSPECTION_SOURCE_ID,0)=2
+            AND V.SYSTEM_ID=2 
+            AND V.VEHICLE_STATUS_ID=10
+                 
+ 	
+ 	</select>
+ 	
+ 	<select id="getCCSgsUpdateDamageAndAccountInfoFlag" parameterType="com.atc.dataservices.mapper.model.AtcoStageVehicle" resultType="java.lang.Long">
+		SELECT MAX(VS.UPD_DMG_AND_ACCT_INFO) FROM VEHICLES V, VEHICLE_STATUSES VS
+		WHERE V.VIN = #{vin} 
+		AND V.ACTIVE = 1
+		AND V.SYSTEM_ID = VS.SYSTEM_ID
+		AND V.VEHICLE_STATUS_ID = VS.VEHICLE_STATUS_ID
+		AND V.SELLER_ORGANIZATION_ID = #{sellerOrganizationId}
+ 	</select>
+ 	
+	<insert id="insertChryslerCapitalVehicles" parameterType="com.atc.dataservices.mapper.model.AtcoStageVehicle">
+	   <selectKey keyProperty="vehicleId" resultType="long" order="BEFORE">
+			SELECT VEHICLES_SEQ.NEXTVAL FROM DUAL
+	   </selectKey>
+		   INSERT INTO VEHICLES
+		        (VEHICLE_ID, VIN, 
+		         SYSTEM_ID, VEHICLE_STATUS_ID, ACTIVE, CREATE_DATE 
+		         <if test="countryId != null">,COUNTRY_ID</if>
+		         <if test="carGroupConfigId != null">,CAR_GROUP_CONFIG_ID</if>
+		         <if test="sellerOrganizationId != null">,SELLER_ORGANIZATION_ID</if>
+		         )
+		   SELECT #{vehicleId}, #{vin}, 
+		          #{systemId}, #{vehicleStatusId}, 1, SYSDATE
+		          <if test="countryId != null">,#{countryId}</if>
+		          <if test="carGroupConfigId != null">,#{carGroupConfigId}</if>
+		          <if test="sellerOrganizationId != null">,#{sellerOrganizationId}</if>
+		    FROM DUAL
+		    WHERE NOT EXISTS(SELECT 1 FROM VEHICLES WHERE VIN=#{vin} AND SELLER_ORGANIZATION_ID = #{sellerOrganizationId} AND ACTIVE = 1)	     
+	</insert>
+</mapper>

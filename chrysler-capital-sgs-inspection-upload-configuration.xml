@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<file-config>
+	<description>
+		<id>chrysler.capital.sgs.inspection.upload.config</id>
+		<name>SGS as Inspection Company for Chrysler Capital - Inbound</name>
+		<created>2014.05.21</created>
+	</description>
+	<phases>
+		<source>
+			<name>xml</name>
+			<mode>in</mode>
+			<identity-file>identityFileAtcoStdSellerInspection</identity-file>
+			<identity-folder>identityFolderChryslerCapitalSGSInspection</identity-folder>			
+		</source>
+		<transformers>
+			<name>xslt</name>
+			<xslt-file>/config/chrysler-capital-sgs-inspection-upload.xsl</xslt-file>			
+		</transformers>
+		<destination>
+			<name>database</name>
+			<database-table>atco-stage-vehicles</database-table>
+			<update-operation>batch</update-operation>			
+			<record-mapper-bean-id>chryslerCapitalSgsInspectionMapper</record-mapper-bean-id>
+			<batch-control-file-mapping>atcoss-stage-vehicles-sql-loader.ctl,
+										atcoss-stage-tires-with-tire-picture-sql-loader.ctl,
+										atcoss-stage-parts-sql-loader.ctl,
+										atcoss-stage-damages-with-damage-pictures-severity-sql-loader.ctl,
+										atcoss-stage-inspections-sqlldr.ctl,
+										atcoss-stage-pictures-with-comments-sql-loader.ctl</batch-control-file-mapping>
+           	<post-process-bean-id>dummy</post-process-bean-id>						
+		</destination>		
+	</phases>
+</file-config>
